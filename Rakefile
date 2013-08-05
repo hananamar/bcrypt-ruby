@@ -57,8 +57,19 @@ else
   Rake::ExtensionTask.new("bcrypt_ext", GEMSPEC) do |ext|
     ext.ext_dir = 'ext/mri'
     ext.cross_compile = true
-    ext.cross_platform = ['x86-mingw32', 'x86-mswin32-60']
+    ext.cross_platform = ['x86-mingw32', 'x86-mswin32-60', 'x64-mingw32']
   end
+end
+
+# Entry point for fat-binary gems on win32
+file("lib/bcrypt_ext.rb") do |t|
+  File.open(t.name, 'wb') do |f|
+    f.write <<-eoruby
+RUBY_VERSION =~ /(\\d+.\\d+)/
+require "\#{$1}/#{File.basename(t.name, '.rb')}"
+    eoruby
+  end
+  at_exit{ FileUtils.rm t.name if File.exists?(t.name) }
 end
 
 desc "Run a set of benchmarks on the compiled extension."
